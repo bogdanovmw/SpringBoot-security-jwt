@@ -1,6 +1,7 @@
 package com.example.Test.security.service;
 
 import com.example.Test.exception.TokenRefreshException;
+import com.example.Test.exception.UserNotFoundException;
 import com.example.Test.model.RefreshToken;
 import com.example.Test.repository.RefreshTokenRepository;
 import com.example.Test.repository.UserRepository;
@@ -23,9 +24,12 @@ public class RefreshTokenService {
     @Autowired
     private UserRepository userRepository;
 
-
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
+    }
+
+    public RefreshToken findRefreshTokenByUserId(Long id) {
+        return refreshTokenRepository.findByUserId(id).orElse(null);
     }
 
     public RefreshToken createRefreshToken(Long userId) {
@@ -38,6 +42,17 @@ public class RefreshTokenService {
         refreshToken = refreshTokenRepository.save(refreshToken);
 
         return refreshToken;
+    }
+
+    public RefreshToken updateRefreshToken(Long userId) {
+        RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        refreshToken.setUser(userRepository.findById(userId).get());
+        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+        refreshToken.setToken(UUID.randomUUID().toString());
+
+        return refreshTokenRepository.save(refreshToken);
     }
 
     public RefreshToken verifyExpiration(RefreshToken token) {
@@ -53,4 +68,6 @@ public class RefreshTokenService {
     public int deleteByUserId(Long userId) {
         return refreshTokenRepository.deleteByUser(userRepository.findById(userId).get());
     }
+
+
 }

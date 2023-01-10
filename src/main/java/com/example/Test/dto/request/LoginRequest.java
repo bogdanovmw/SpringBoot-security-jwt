@@ -1,4 +1,4 @@
-package com.example.Test.payload.request;
+package com.example.Test.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +10,6 @@ import javax.validation.constraints.NotBlank;
 public class LoginRequest {
     @NotBlank
     private String username;
-
     @NotBlank
     private String password;
 }
