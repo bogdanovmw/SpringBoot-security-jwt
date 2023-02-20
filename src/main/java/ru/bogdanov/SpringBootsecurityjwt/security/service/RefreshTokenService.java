@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.bogdanov.SpringBootsecurityjwt.exception.TokenRefreshException;
 import ru.bogdanov.SpringBootsecurityjwt.model.RefreshToken;
+import ru.bogdanov.SpringBootsecurityjwt.model.User;
 import ru.bogdanov.SpringBootsecurityjwt.repository.RefreshTokenRepository;
 import ru.bogdanov.SpringBootsecurityjwt.repository.UserRepository;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,11 +34,31 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
 
         refreshToken.setUser(userRepository.findById(userId).get());
-        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+
+        Instant now = Instant.now();
+        ZoneId zone = ZoneId.of("Asia/Yekaterinburg");
+
+        refreshToken.setCreatedDate(now.atZone(zone).toInstant());
+        refreshToken.setExpiryDate(now.atZone(zone).toInstant().plusMillis(refreshTokenDurationMs));
         refreshToken.setToken(UUID.randomUUID().toString());
 
         refreshToken = refreshTokenRepository.save(refreshToken);
+
         return refreshToken;
+    }
+
+    public RefreshToken updateRefreshToken(String token) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
+                .orElseThrow(() -> new TokenRefreshException(token));
+
+        Instant now = Instant.now();
+        ZoneId zone = ZoneId.of("Asia/Yekaterinburg");
+
+        refreshToken.setCreatedDate(now.atZone(zone).toInstant());
+        refreshToken.setExpiryDate(now.atZone(zone).toInstant().plusMillis(refreshTokenDurationMs));
+        refreshToken.setToken(UUID.randomUUID().toString());
+
+        return refreshTokenRepository.save(refreshToken);
     }
 
     public RefreshToken verifyExpiration(RefreshToken token) {
@@ -46,6 +68,12 @@ public class RefreshTokenService {
         }
 
         return token;
+    }
+
+    public Optional<RefreshToken> findByUser(Long userId) {
+        User user = userRepository.findById(userId).get();
+
+        return refreshTokenRepository.findTop1ByUserOrderByIdDesc(user);
     }
 
     @Transactional

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.List;
 
 @AllArgsConstructor
@@ -14,4 +15,6 @@ public class UserInfoResponse {
     private String username;
     private String email;
     private List<String> roles;
+    private String createdDate;
+    private String expireDate;
 }

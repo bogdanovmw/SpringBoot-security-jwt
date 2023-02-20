@@ -25,20 +25,24 @@ public class RefreshTokenController {
 
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
-        String refreshToken = jwtUtils.getJwtRefreshFromCookies(request);
+        String oldToken = jwtUtils.getJwtRefreshFromCookies(request);
 
-        if ((refreshToken != null) && (refreshToken.length() > 0)) {
-            return refreshTokenService.findByToken(refreshToken)
+        if ((oldToken != null) && (oldToken.length() > 0)) {
+            return refreshTokenService.findByToken(oldToken)
                     .map(refreshTokenService::verifyExpiration)
                     .map(RefreshToken::getUser)
                     .map(user -> {
+                        RefreshToken refreshToken = refreshTokenService.updateRefreshToken(oldToken);
+                        ResponseCookie jwtRefreshCookie = jwtUtils.generateRefreshJwtCookie(refreshToken.getToken());
+
                         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(user);
 
                         return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                                .header(HttpHeaders.SET_COOKIE, jwtRefreshCookie.toString())
                                 .body(new MessageResponse("Token is refreshed successfully!"));
                     })
-                    .orElseThrow(() -> new TokenRefreshException(refreshToken,
+                    .orElseThrow(() -> new TokenRefreshException(oldToken,
                             "Refresh token is not in database!"));
         }
 

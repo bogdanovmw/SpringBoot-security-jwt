@@ -18,12 +18,15 @@ import ru.bogdanov.SpringBootsecurityjwt.security.service.RefreshTokenService;
 import ru.bogdanov.SpringBootsecurityjwt.security.service.UserDetailsImpl;
 
 import javax.validation.Valid;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
 public class SingInController {
+    private static final String PATTERN_FORMAT = "dd.MM.yyyy HH:mm:ss";
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -33,6 +36,7 @@ public class SingInController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
 
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -57,6 +61,9 @@ public class SingInController {
                 .body(new UserInfoResponse(userDetails.getId(),
                         userDetails.getUsername(),
                         userDetails.getEmail(),
-                        roles));
+                        roles,
+                        formatter.format(refreshToken.getCreatedDate()),
+                        formatter.format(refreshToken.getExpiryDate()))
+                );
     }
 }
